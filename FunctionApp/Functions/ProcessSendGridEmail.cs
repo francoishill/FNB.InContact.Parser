@@ -1,38 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using FNB.InContact.Parser.FunctionApp.Models.BusMessages;
+using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 using FNB.InContact.Parser.FunctionApp.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace FNB.InContact.Parser.FunctionApp.Functions;
 
-public static class InContactEmailParserWebhook
+public static class ProcessSendGridEmail
 {
-    [FunctionName("InContactEmailParserWebhook")]
-    public static async Task<IActionResult> RunAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
+    [FunctionName("ProcessSendGridEmail")]
+    public static async Task RunAsync(
+        [ServiceBusTrigger("%ReceivedSendGridEmailsQueueName%")] string receivedSendGridEmailJson,
         ILogger log,
         [Table("ParsedInContactTextLines")] IAsyncCollector<ParsedInContactTextLineEntity> parsedEntitiesCollector,
         [Table("NonParsedInContactTextLines")] IAsyncCollector<NonParsedInContactTextLineEntity> nonParsedEntitiesCollector,
         CancellationToken cancellationToken)
     {
-        log.LogInformation("C# HTTP trigger function processed a request");
+        log.LogInformation("C# ServiceBus queue trigger function processed message: {Message}", receivedSendGridEmailJson);
+
+        var receivedSendGridEmail = JsonConvert.DeserializeObject<ReceivedSendGridEmailBusMessage>(receivedSendGridEmailJson);
 
         var extractor = new InContactHttpRequestExtractor(log);
 
+        var bodyStream = new MemoryStream((Encoding.UTF8).GetBytes(receivedSendGridEmail.RequestBody));
+
         var extractedLines = await extractor.ExtractInContactLines(
-            req.Body,
-            req.HasFormContentType,
+            bodyStream,
+            receivedSendGridEmail.RequestHasFormContentType,
             cancellationToken);
 
         var parser = new InContactTextParser(log);
-
 
         var parsedEntities = new List<InContactTextParser.ParsedInContactLine>();
         var nonParsedEntities = new List<string>();
@@ -78,29 +82,11 @@ public static class InContactEmailParserWebhook
             }
         }
 
-        return new OkObjectResult(new
+        log.LogInformation("Successfully parsed {Count} text lines", parsedEntities.Count);
+
+        if (nonParsedEntities.Count > 0)
         {
-            ParsedEntities = parsedEntities,
-            NonParsedEntities = nonParsedEntities,
-        });
-    }
-
-    public class ParsedInContactTextLineEntity : TableEntity
-    {
-        public double Amount { get; set; }
-        public string Action { get; set; }
-        public string AccountType { get; set; }
-        public string AccountNumber { get; set; }
-        public string PartialCardNumber { get; set; }
-        public string Method { get; set; }
-        public double? Available { get; set; }
-        public string Reference { get; set; }
-        public string Date { get; set; }
-        public string Time { get; set; }
-    }
-
-    public class NonParsedInContactTextLineEntity : TableEntity
-    {
-        public string TextLine { get; set; }
+            log.LogWarning("Failed to parse {Count} text lines", nonParsedEntities.Count);
+        }
     }
 }
