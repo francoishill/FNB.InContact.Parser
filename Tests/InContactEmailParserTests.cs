@@ -2,18 +2,21 @@ using FNB.InContact.Parser.FunctionApp.Services;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
-namespace Tests;
+namespace FNB.InContact.Parser.Tests;
 
 public class InContactEmailParserTests
 {
     [Fact]
     public void ParseInContactLines_PaidFrom_ExpectedBehaviour()
     {
+        // Arrange
         var logger = Substitute.For<ILogger>();
         var parser = new InContactTextParser(logger);
 
+        // Act
         var parsedEmail = parser.ParseInContactLines("FNB:-) R876.32 paid from Premier a/c..123456 @ Eft. Avail R554433. Ref.Someone I paid money to. 23Jun 02:44");
 
+        // Assert
         Assert.NotNull(parsedEmail);
 
         Assert.Equal(876.32, parsedEmail.Amount, 3);
@@ -31,11 +34,14 @@ public class InContactEmailParserTests
     [Fact]
     public void ParseInContactLines_PaidTo_ExpectedBehaviour()
     {
+        // Arrange
         var logger = Substitute.For<ILogger>();
         var parser = new InContactTextParser(logger);
 
+        // Act
         var parsedEmail = parser.ParseInContactLines("FNB:-) R9876.21 paid to Premier a/c..123456 @ Eft. Ref.Someone that paid money to me. 24Jun 07:73");
 
+        // Assert
         Assert.NotNull(parsedEmail);
 
         Assert.Equal(9876.21, parsedEmail.Amount, 3);
@@ -53,10 +59,14 @@ public class InContactEmailParserTests
     [Fact]
     public void ParseInContactLines_ReservedFor_ExpectedBehaviour()
     {
+        // Arrange
         var logger = Substitute.For<ILogger>();
         var parser = new InContactTextParser(logger);
 
+        // Act
         var parsedEmail = parser.ParseInContactLines("FNB :-) R571.54 reserved for purchase @ Some Random Merchant from FNB card a/c..123000 using card..8765. Avail R3201. 23Jun 08:40");
+        
+        // Assert
         Assert.NotNull(parsedEmail);
 
         Assert.Equal(571.54, parsedEmail.Amount, 3);
@@ -70,14 +80,18 @@ public class InContactEmailParserTests
         Assert.Equal("23Jun", parsedEmail.Date);
         Assert.Equal("08:40", parsedEmail.Time);
     }
-    
+
     [Fact]
     public void ParseInContactLines_ReservedFor_WeirdCharacters_ExpectedBehaviour()
     {
+        // Arrange
         var logger = Substitute.For<ILogger>();
         var parser = new InContactTextParser(logger);
 
+        // Act
         var parsedEmail = parser.ParseInContactLines("FNB :-) R571.54 reserved for purchase @ Some Random Merchant Char(1 from FNB card a/c..123000 using card..8765. Avail R3201. 23Jun 08:40");
+        
+        // Assert
         Assert.NotNull(parsedEmail);
 
         Assert.Equal(571.54, parsedEmail.Amount, 3);
@@ -95,10 +109,14 @@ public class InContactEmailParserTests
     [Fact]
     public void ParseInContactLines_WithdrawnFrom_ExpectedBehaviour()
     {
+        // Arrange
         var logger = Substitute.For<ILogger>();
         var parser = new InContactTextParser(logger);
 
+        // Act
         var parsedEmail = parser.ParseInContactLines("FNB:-) R1500.00 withdrawn from Premier a/c..12345 using card..3456 @ Cxb009650000001. Avail R54321. 15Jun 08:02");
+        
+        // Assert
         Assert.NotNull(parsedEmail);
 
         Assert.Equal(1500.00, parsedEmail.Amount, 3);
@@ -116,10 +134,14 @@ public class InContactEmailParserTests
     [Fact]
     public void ParseInContactLines_TransferFrom_ExpectedBehaviour()
     {
+        // Arrange
         var logger = Substitute.For<ILogger>();
         var parser = new InContactTextParser(logger);
 
+        // Act
         var parsedEmail = parser.ParseInContactLines("FNB:-) R12345.00 t/fer from Premier a/c..765987 to FNB card a/c..514364 @ Online Banking. Avail R775533. 11Jun 09:28");
+        
+        // Assert
         Assert.NotNull(parsedEmail);
 
         Assert.Equal(12345.00, parsedEmail.Amount, 3);

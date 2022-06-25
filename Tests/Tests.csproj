@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
 
         <IsPackable>false</IsPackable>
+        <RootNamespace>FNB.InContact.Parser.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
