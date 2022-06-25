@@ -1,0 +1,94 @@
+--xYzZY
+Content-Disposition: form-data; name="headers"
+
+Subject: Fwd: FNB :-) R123.21 reserved for purchase @ Steam Purchase from FNB card a/c..12345 using card..1234. 23Jun 07:39
+To: test@sendgridparse.example.com
+Content-Type: multipart/related; boundary="00000000000058fe1a05e23f9e10"
+
+--xYzZY
+Content-Disposition: form-data; name="dkim"
+
+{@gmail.com : pass}
+--xYzZY
+Content-Disposition: form-data; name="content-ids"
+
+{"181997ff1c2c270a4672":"attachment2","181997ff1c278c893661":"attachment1"}
+--xYzZY
+Content-Disposition: form-data; name="to"
+
+test@sendgridparse.example.com
+--xYzZY
+Content-Disposition: form-data; name="html"
+
+<div dir="ltr"><div class="gmail_default" style="font-family:verdana,sans-serif"><img src="cid:181997ff1c278c893661" style="font-family: Arial, Helvetica, sans-serif;"><br></div><div class="gmail_quote"><div>
+
+<div class="m_-7508076860358941092welcome">Dear valued customer</div>
+<div class="m_-7508076860358941092content">
+<p>
+  • FNB:-) R98.00 paid from Premier a/c..123456 @ Eft. Avail R54321. Ref.Merchant one 92374623. 2Jun 00:00<br>
+  • FNB:-) R749.00 paid from Premier a/c..123456 @ Eft. Avail R54321. Ref.Merchant Two 29348723. 2Jun 00:00<br>
+</p>
+<p></p>
+</div>
+<div class="m_-7508076860358941092info"><b>Please do NOT reply to this message as it is sent from an unattended mailbox</b></div>
+<table cellpadding="0" cellspacing="0">
+<tbody><tr>
+
+<td><img src="cid:181997ff1c2c270a4672"></td>
+
+</tr>
+</tbody></table>
+
+</div>
+
+
+
+--xYzZY
+Content-Disposition: form-data; name="from"
+
+Example Person <exampleperson1@gmail.com>
+--xYzZY
+Content-Disposition: form-data; name="text"
+
+Dear valued customer
+
+• FNB:-) R98.00 paid from Premier
+a/c..123456 @ Eft. Avail R54321. Ref.Merchant one 92374623. 2Jun 00:00<br>
+
+*Please do NOT reply to this message as it is sent from an unattended
+mailbox*
+
+
+-- 
+Example Person
+
+--xYzZY
+Content-Disposition: form-data; name="sender_ip"
+
+209.85.218.43
+--xYzZY
+
+Content-Disposition: form-data; name="envelope"
+
+{"to":["test@sendgridparse.example.com"],"from":"exampleperson1@gmail.com"}
+--xYzZY
+Content-Disposition: form-data; name="attachments"
+
+2
+--xYzZY
+Content-Disposition: form-data; name="subject"
+
+Fwd: FNB :-) R123.21 reserved for purchase @ Steam Purchase from FNB card a/c..12345 using card..1234. 23Jun 07:39
+--xYzZY
+Content-Disposition: form-data; name="attachment-info"
+
+{"attachment2":{"filename":"banner.png","name":"banner.png","type":"image/png","content-id":"181997ff1c2c270a4672"},"attachment1":{"filename":"logo.png","name":"logo.png","type":"image/png","content-id":"181997ff1c278c893661"}}
+--xYzZY
+Content-Disposition: form-data; name="SPF"
+
+pass
+--xYzZY
+Content-Disposition: form-data; name="charsets"
+
+{"to":"UTF-8","filename":"UTF-8","html":"UTF-8","subject":"UTF-8","from":"UTF-8","text":"UTF-8"}
+--xYzZY--

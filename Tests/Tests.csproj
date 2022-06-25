@@ -27,4 +27,12 @@
       <ProjectReference Include="..\FunctionApp\FunctionApp.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="TestData\SendGrid_InContact_Email1.txt" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="TestData\InContactEmails\TwoHtmlEntries.txt" />
+    </ItemGroup>
+
 </Project>

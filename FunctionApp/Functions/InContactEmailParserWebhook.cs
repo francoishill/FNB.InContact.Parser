@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Services;
 using Microsoft.AspNetCore.Http;
@@ -20,22 +19,25 @@ public static class InContactEmailParserWebhook
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
         ILogger log,
         [Table("ParsedInContactTextLines")] IAsyncCollector<ParsedInContactTextLineEntity> parsedEntitiesCollector,
-        [Table("NonParsedInContactTextLines")] IAsyncCollector<NonParsedInContactTextLineEntity> nonParsedEntitiesCollector)
+        [Table("NonParsedInContactTextLines")] IAsyncCollector<NonParsedInContactTextLineEntity> nonParsedEntitiesCollector,
+        CancellationToken cancellationToken)
     {
         log.LogInformation("C# HTTP trigger function processed a request");
 
+        var extractor = new InContactHttpRequestExtractor(log);
+
+        var extractedLines = await extractor.ExtractInContactLines(
+            req.Body,
+            req.HasFormContentType,
+            cancellationToken);
+
         var parser = new InContactTextParser(log);
 
-        var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-
-        var textLines = requestBody.Split("\n")
-            .Select(line => line.Trim())
-            .Where(line => !string.IsNullOrWhiteSpace(line));
 
         var parsedEntities = new List<InContactTextParser.ParsedInContactLine>();
         var nonParsedEntities = new List<string>();
 
-        foreach (var textLine in textLines)
+        foreach (var textLine in extractedLines)
         {
             try
             {
@@ -55,7 +57,7 @@ public static class InContactEmailParserWebhook
                     Reference = parsedEntity.Reference,
                     Date = parsedEntity.Date,
                     Time = parsedEntity.Time,
-                });
+                }, cancellationToken);
 
                 parsedEntities.Add(parsedEntity);
             }
@@ -66,7 +68,7 @@ public static class InContactEmailParserWebhook
                     PartitionKey = "InContactText",
                     RowKey = Guid.NewGuid().ToString(),
                     TextLine = textLine,
-                });
+                }, cancellationToken);
 
                 nonParsedEntities.Add(textLine);
             }
