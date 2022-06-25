@@ -49,7 +49,7 @@ public static class ProcessSendGridEmail
 
                 await parsedEntitiesCollector.AddAsync(new ParsedInContactTextLineEntity
                 {
-                    PartitionKey = "InContactText",
+                    PartitionKey = ParsedInContactTextLineEntity.IN_CONTACT_PRIMARY_KEY,
                     RowKey = Guid.NewGuid().ToString(),
                     Amount = parsedEntity.Amount,
                     Action = parsedEntity.Action,
@@ -69,7 +69,7 @@ public static class ProcessSendGridEmail
             {
                 await nonParsedEntitiesCollector.AddAsync(new NonParsedInContactTextLineEntity
                 {
-                    PartitionKey = "InContactText",
+                    PartitionKey = NonParsedInContactTextLineEntity.IN_CONTACT_PRIMARY_KEY,
                     RowKey = Guid.NewGuid().ToString(),
                     TextLine = textLine,
                 }, cancellationToken);

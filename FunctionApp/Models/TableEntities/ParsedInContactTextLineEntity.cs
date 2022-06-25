@@ -4,6 +4,8 @@ namespace FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 
 public class ParsedInContactTextLineEntity : TableEntity
 {
+    public const string IN_CONTACT_PRIMARY_KEY = "InContactText";
+
     public double Amount { get; set; }
     public string Action { get; set; }
     public string AccountType { get; set; }
