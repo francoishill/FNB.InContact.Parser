@@ -155,16 +155,4 @@ public class InContactEmailParserTests
         Assert.Equal("11Jun", parsedEmail.Date);
         Assert.Equal("09:28", parsedEmail.Time);
     }
-
-    [Fact]
-    public void TestMultiLineInContactText()
-    {
-        Assert.True(false);
-    }
-
-    [Fact]
-    public void EnsureGithubActionDoesUnitTests()
-    {
-        Assert.True(false);
-    }
 }
