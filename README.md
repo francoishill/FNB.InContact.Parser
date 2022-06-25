@@ -7,7 +7,10 @@ A parser for FNB banking incontact emails or SMSs
 * Fork this repo
 * Configure your own github action workflows (see the `./github/workflows/deploy-function-app.yml` file)
   * Ensure you specify your own value for `AZURE_FUNCTIONAPP_NAME`
-* Deploy your function app and obtain its unique URL
+* Deploy your function app and obtain its unique URL for the `ReceiveAndStoreSendGridEmail` function
+  * Be sure to add Application Settings (environment variables) in your function app's "Configuration":
+      * `ReceivedSendGridEmailsQueueName`: The queue name it must send/receive messages to/from
+      * `ServiceBus`: Should be a Service Bus connection string to the service bus with an existing queue (with the same name used in `ReceivedSendGridEmailsQueueName` above)
 * See the SendGrid documentation on how to set up [SendGrid's Inbound Parse](https://docs.sendgrid.com/for-developers/parsing-email/setting-up-the-inbound-parse-webhook)
   * Use your function app's unique URL as the "Destination URL" of the SendGrid "Inbound Parse" config 
 
