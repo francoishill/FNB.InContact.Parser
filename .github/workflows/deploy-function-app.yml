@@ -22,16 +22,15 @@ jobs:
           
       - name: Install dependencies
         run: dotnet restore
-        working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
-      - name: Build
+      - name: Build FunctionApp
         run: dotnet build --configuration Release --no-restore --output ./output
         working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
       - name: Test
         run: dotnet test --no-restore
 
-      - name: 'Run Azure Functions Action'
+      - name: 'Deploy FunctionApp'
         uses: Azure/functions-action@v1
         id: fa
         with:
