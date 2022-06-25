@@ -29,8 +29,7 @@ jobs:
         working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
       - name: Test
-        run: dotnet test --no-restore --verbosity normal
-        working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        run: dotnet test --no-restore
 
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
