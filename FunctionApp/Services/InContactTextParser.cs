@@ -16,11 +16,11 @@ public class InContactTextParser
     {
         var patterns = new[]
         {
-            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>paid from) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) @ (?<Method>.+)\. Avail R(?<Available>[\d\.]+)\. Ref\.(?<Reference>[^\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
-            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>paid to) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) @ (?<Method>.+)\. Ref\.(?<Reference>[^\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
-            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>reserved for purchase) @ (?<Reference>[^\.]+) from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
-            new Regex(@"FNB\s?:-?\) (?<Action>REVERSAL of) R(?<Amount>[\d\.]+) for (?<Reference>[^\.]+) from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
-            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>withdrawn from) (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+) @ (?<Reference>[^\.]+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
+            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>paid from) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) @ (?<Method>.+)\. Avail R(?<Available>[\d\.]+)\. Ref\.(?<Reference>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
+            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>paid to) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) @ (?<Method>.+)\. Ref\.(?<Reference>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
+            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>reserved for purchase) @ (?<Reference>.+) from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
+            new Regex(@"FNB\s?:-?\) (?<Action>REVERSAL of) R(?<Amount>[\d\.]+) for (?<Reference>.+) from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
+            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>withdrawn from) (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+) @ (?<Reference>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
             new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>t\/fer from) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) to (?<Reference>.+) @ (?<Method>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
         };
 

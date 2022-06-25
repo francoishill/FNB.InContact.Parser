@@ -42,14 +42,10 @@ public class InContactHttpRequestExtractor
             var parser = new HtmlParser();
             var document = await parser.ParseDocumentAsync(inboundEmail.Html);
 
-            var lines = document.ChildNodes
-                .Select(p => p.Text())
-                .SelectMany(p => p.Split(new[] { "<br>", "\n" }, StringSplitOptions.RemoveEmptyEntries))
-                .Select(line => line.Replace("•", "").Trim())
-                .Where(line => 
-                    !string.IsNullOrWhiteSpace(line)
-                    && !line.Trim().EndsWith("Dear valued customer", StringComparison.Ordinal)
-                    && !line.Trim().StartsWith("Please do NOT reply to this message", StringComparison.Ordinal))
+            var lines = SanitizeLines(document.ChildNodes
+                    .Select(p => p.Text())
+                    .SelectMany(p => p.Split(new[] { "<br>", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(line => line.Replace("•", "").Trim()))
                 .ToList();
 
             if (lines.Count > 0)
@@ -80,10 +76,23 @@ public class InContactHttpRequestExtractor
             return new[] { emailText };
         }
 
+        bodyStream.Position = 0;
+
         var rawBody = await new StreamReader(bodyStream).ReadToEndAsync();
 
         _logger.LogInformation("Body is not of type Form, assuming the raw body can be used, raw body is: {Body}", rawBody);
 
-        return new[] { rawBody };
+        return SanitizeLines(rawBody
+            .Split(new[] { "\n", "<br>" }, StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static IEnumerable<string> SanitizeLines(IEnumerable<string> originalLines)
+    {
+        return originalLines
+            .Select(line => line.Replace("•", "").Trim())
+            .Where(line =>
+                !string.IsNullOrWhiteSpace(line)
+                && !line.Trim().EndsWith("Dear valued customer", StringComparison.Ordinal)
+                && !line.Trim().StartsWith("Please do NOT reply to this message", StringComparison.Ordinal));
     }
 }
