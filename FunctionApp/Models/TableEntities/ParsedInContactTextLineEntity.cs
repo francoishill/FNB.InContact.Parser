@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using Microsoft.Azure.Cosmos.Table;
 
 namespace FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 
+[DebuggerDisplay("{ToSummaryString()}")]
 public class ParsedInContactTextLineEntity : TableEntity
 {
     public const string IN_CONTACT_PRIMARY_KEY = "InContactText";
@@ -16,4 +18,9 @@ public class ParsedInContactTextLineEntity : TableEntity
     public string Reference { get; set; }
     public string Date { get; set; }
     public string Time { get; set; }
+
+    public string ToSummaryString()
+    {
+        return $"{Amount} {Action} {Reference} {Method} {Date} {Time} {Available} {AccountType}, {AccountNumber}, {PartialCardNumber}";
+    }
 }
