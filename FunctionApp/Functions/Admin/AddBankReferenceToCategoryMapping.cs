@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,8 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
+// ReSharper disable UnusedMember.Local
+// ReSharper disable CollectionNeverQueried.Local
 // ReSharper disable ClassNeverInstantiated.Local
 // ReSharper disable CollectionNeverUpdated.Local
 
@@ -53,8 +56,13 @@ public static class AddBankReferenceToCategoryMapping
             return HttpResponseFactory.CreateBadRequestResponse(mappingValidationErrors.ToArray());
         }
 
-        var alreadyExistingEntities = new List<RequestDto.BankReferenceToCategoryMapping>();
-        var successfullyAddedCount = 0;
+        var response = new ResponseDto
+        {
+            SuccessfullyAddedCount = 0,
+            AlreadyExistingEntities = new List<RequestDto.BankReferenceToCategoryMapping>(),
+            FailedEntities = new List<RequestDto.BankReferenceToCategoryMapping>(),
+        };
+
         foreach (var mapping in requestDTO.Mappings)
         {
             if (mapping.Direction == null)
@@ -70,22 +78,25 @@ public static class AddBankReferenceToCategoryMapping
             try
             {
                 await mappingsTable.ExecuteAsync(TableOperation.Insert(entity), cancellationToken);
-                successfullyAddedCount++;
+                response.SuccessfullyAddedCount++;
             }
             catch (StorageException storageException) when (storageException.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
             {
-                alreadyExistingEntities.Add(mapping);
+                response.AlreadyExistingEntities.Add(mapping);
+            }
+            catch (Exception exception)
+            {
+                log.LogError(exception, "Unable to store mapping, error was {Error}, mapping is {Mapping}", exception.Message, JsonConvert.SerializeObject(mapping));
+                response.FailedEntities.Add(mapping);
             }
         }
 
-        if (alreadyExistingEntities.Count > 0)
+        if (response.SuccessfullyAddedCount != requestDTO.Mappings.Count)
         {
-            return HttpResponseFactory.CreateBadRequestResponse(
-                $"{alreadyExistingEntities.Count} entities already existed, {successfullyAddedCount} added successfully",
-                $"Duplicate entities: {string.Join(" ", alreadyExistingEntities.Select(e => $"[{e.Direction} {e.BankReferenceRegexPattern}]"))}");
+            return new BadRequestObjectResult(response);
         }
 
-        return new OkResult();
+        return new OkObjectResult(response);
     }
 
     private class RequestDto
@@ -104,5 +115,14 @@ public static class AddBankReferenceToCategoryMapping
             [Required, MinLength(2)]
             public string CategoryName { get; set; }
         }
+    }
+
+    private class ResponseDto
+    {
+        public int SuccessfullyAddedCount { get; set; }
+        public int AlreadyExistingEntitiesCount => AlreadyExistingEntities.Count;
+        public int NonSavedEntitiesCount => FailedEntities.Count;
+        public List<RequestDto.BankReferenceToCategoryMapping> AlreadyExistingEntities { get; set; }
+        public List<RequestDto.BankReferenceToCategoryMapping> FailedEntities { get; set; }
     }
 }
