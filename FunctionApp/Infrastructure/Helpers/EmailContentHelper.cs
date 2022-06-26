@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 
-namespace FNB.InContact.Parser.FunctionApp.Helpers;
+namespace FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 
 public static class EmailContentHelper
 {

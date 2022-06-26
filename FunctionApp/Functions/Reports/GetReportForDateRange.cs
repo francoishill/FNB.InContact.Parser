@@ -4,14 +4,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Infrastructure.Factories;
 using FNB.InContact.Parser.FunctionApp.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Logging;
 
-namespace FNB.InContact.Parser.FunctionApp.Functions;
+namespace FNB.InContact.Parser.FunctionApp.Functions.Reports;
 
 public static class GetReportForDateRange
 {

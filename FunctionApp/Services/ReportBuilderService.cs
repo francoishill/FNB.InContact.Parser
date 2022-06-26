@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FNB.InContact.Parser.FunctionApp.Helpers;
+using FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 using Microsoft.Azure.Cosmos.Table;
 

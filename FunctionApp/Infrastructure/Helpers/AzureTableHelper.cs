@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos.Table;
 
-namespace FNB.InContact.Parser.FunctionApp.Helpers;
+namespace FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 
 public static class AzureTableHelper
 {

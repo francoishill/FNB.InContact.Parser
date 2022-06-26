@@ -2,16 +2,16 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FNB.InContact.Parser.FunctionApp.Helpers;
+using FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Logging;
 
-namespace FNB.InContact.Parser.FunctionApp.Functions;
+namespace FNB.InContact.Parser.FunctionApp.Functions.Admin;
 
 public static class GetBankReferenceToCategoryMappings
 {

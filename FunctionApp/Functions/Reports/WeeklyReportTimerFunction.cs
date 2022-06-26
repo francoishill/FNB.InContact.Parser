@@ -7,7 +7,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using SendGrid.Helpers.Mail;
 
-namespace FNB.InContact.Parser.FunctionApp.Functions;
+namespace FNB.InContact.Parser.FunctionApp.Functions.Reports;
 
 public static class WeeklyReportTimerFunction
 {
