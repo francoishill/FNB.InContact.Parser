@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Web;
 using Microsoft.Azure.Cosmos.Table;
 
 namespace FNB.InContact.Parser.FunctionApp.Models.TableEntities;
@@ -6,7 +7,7 @@ namespace FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 public class BankReferenceToCategoryMappingEntity : TableEntity
 {
     public TransactionDirection Direction => Enum.Parse<TransactionDirection>(PartitionKey);
-    public string BankReferenceRegexPattern => RowKey;
+    public string BankReferenceRegexPattern => HttpUtility.UrlDecode(RowKey);
 
     public string CategoryName { get; set; }
 
@@ -21,7 +22,7 @@ public class BankReferenceToCategoryMappingEntity : TableEntity
         string categoryName)
     {
         PartitionKey = direction.ToString();
-        RowKey = bankReferenceRegexPattern;
+        RowKey = HttpUtility.UrlEncode(bankReferenceRegexPattern);
 
         CategoryName = categoryName;
     }
