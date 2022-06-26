@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
+using Microsoft.Extensions.Logging;
 
 namespace FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 
@@ -107,40 +108,57 @@ public static class EmailContentHelper
     }
 
     public static string BuildHtmlSummaries(
+        ILogger logger,
         IEnumerable<BankReferenceToCategoryMappingEntity> bankReferenceMappings,
         IReadOnlyCollection<ParsedInContactTextLineEntity> parsedEntries)
     {
         var patternWithBankReferenceMappings = bankReferenceMappings
+            .OrderBy(mapping => mapping.CategoryName)
             .Select(mapping => new
             {
-                Regex = new Regex(mapping.BankReferenceRegexPattern, RegexOptions.Compiled),
+                Regex = new Regex(mapping.BankReferenceRegexPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled),
                 Mapping = mapping,
             })
             .ToList();
 
+        var patternsGroupedByCategory = patternWithBankReferenceMappings.GroupBy(p => p.Mapping.CategoryName);
+
         var summariesHtml = new StringBuilder();
 
-        summariesHtml.Append("<ul>");
-
         var successfullyMappedEntries = new List<ParsedInContactTextLineEntity>();
-        foreach (var patternWithBankReference in patternWithBankReferenceMappings)
+        foreach (var categoryGroup in patternsGroupedByCategory)
         {
+            var categoryName = categoryGroup.Key;
+            var distinctDirections = categoryGroup.Select(group => group.Mapping.Direction).Distinct().ToList();
+
+            if (distinctDirections.Count > 0)
+            {
+                logger.LogWarning(
+                    "Category mappings Directions are inconsistent, category '{Category}' has the following directions: {Directions}",
+                    categoryName, string.Join(", ", distinctDirections.Select(d => d.ToString())));
+            }
+
+            var firstDirection = distinctDirections.First();
+
             var matchingEntries = parsedEntries
-                .Where(entry => patternWithBankReference.Regex.IsMatch(entry.Reference))
+                .Where(entry => categoryGroup.Any(group => 
+                    group.Regex.IsMatch(entry.Reference)
+                    || group.Regex.IsMatch(entry.Action)))
                 .ToList();
+
+            if (matchingEntries.Count == 0)
+            {
+                continue;
+            }
 
             successfullyMappedEntries.AddRange(matchingEntries.Where(m => !successfullyMappedEntries.Contains(m)));
 
-
-            var categoryName = patternWithBankReference.Mapping.CategoryName;
-            var sign = patternWithBankReference.Mapping.Direction == BankReferenceToCategoryMappingEntity.TransactionDirection.Income ? "+" : "-";
+            var sign = firstDirection == BankReferenceToCategoryMappingEntity.TransactionDirection.Income ? "+" : "-";
             AppendHtmlForCategoryAndEntries(matchingEntries, categoryName, sign, summariesHtml);
         }
 
         var unmappedEntries = parsedEntries.Where(entry => !successfullyMappedEntries.Contains(entry)).ToList();
         AppendHtmlForCategoryAndEntries(unmappedEntries, "Unknown", "?", summariesHtml);
-
-        summariesHtml.Append("</ul>");
 
         return summariesHtml.ToString();
     }
@@ -151,13 +169,14 @@ public static class EmailContentHelper
         string sign,
         StringBuilder summariesHtml)
     {
-        summariesHtml.Append("<li>");
+        summariesHtml.Append("<details>");
 
         var categoryTotalAmount = matchingEntries.Sum(entry => entry.Amount);
 
         var categorySummaryText = $"{categoryName} {sign}R {categoryTotalAmount}";
-        summariesHtml.Append($"<span>{categorySummaryText}</span>");
+        summariesHtml.Append($"<summary>{categorySummaryText}</summary>");
 
+        summariesHtml.Append("<p>");
         summariesHtml.Append("<ul>");
 
         foreach (var matchingEntry in matchingEntries)
@@ -166,8 +185,9 @@ public static class EmailContentHelper
         }
 
         summariesHtml.Append("</ul>");
+        summariesHtml.Append("</p>");
 
-        summariesHtml.Append("</li>");
+        summariesHtml.Append("</details>");
     }
 
     private class HtmlTableCellDefinition<T>

@@ -46,6 +46,7 @@ public static class GetReportForDateRange
         var reportBuilder = new ReportBuilderService();
 
         var reportResult = await reportBuilder.GenerateHtmlReport(
+            log,
             bankReferenceMappingsTable,
             parsedEntitiesTable,
             nonParsedEntitiesTable,

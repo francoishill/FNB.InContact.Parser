@@ -5,12 +5,14 @@ using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 using Microsoft.Azure.Cosmos.Table;
+using Microsoft.Extensions.Logging;
 
 namespace FNB.InContact.Parser.FunctionApp.Services;
 
 public class ReportBuilderService
 {
     public async Task<HtmlReportResult> GenerateHtmlReport(
+        ILogger logger,
         CloudTable bankReferenceMappingsTable,
         CloudTable parsedEntitiesTable,
         CloudTable nonParsedEntitiesTable,
@@ -42,7 +44,7 @@ public class ReportBuilderService
 
         var htmlBody =
             "<h1>Summary</h1>" +
-            EmailContentHelper.BuildHtmlSummaries(bankReferenceMappings, parsedEntries) +
+            EmailContentHelper.BuildHtmlSummaries(logger, bankReferenceMappings, parsedEntries) +
             "<h1>Parsed entries</h1>" +
             EmailContentHelper.BuildHtmlTable(parsedEntries) +
             "<h1>Non-parsed entries</h1>" +
