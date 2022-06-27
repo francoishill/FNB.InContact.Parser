@@ -12,16 +12,12 @@ namespace FNB.InContact.Parser.FunctionApp.Services;
 public class ReportBuilderService
 {
     public async Task<string> GenerateReportEmailSubject(
-        ILogger logger,
-        CloudTable bankReferenceMappingsTable,
         CloudTable parsedEntitiesTable,
         CloudTable nonParsedEntitiesTable,
         DateTime startDate,
         DateTime endDate,
         CancellationToken cancellationToken)
     {
-        var bankReferenceMappings = (await AzureTableHelper.GetTableRecords(bankReferenceMappingsTable, new TableQuery<BankReferenceToCategoryMappingEntity>(), cancellationToken)).ToList();
-
         var parsedRecordsFilter = new TableQuery<ParsedInContactTextLineEntity>().Where(
             TableQuery.CombineFilters(
                 TableQuery.GenerateFilterCondition(nameof(ParsedInContactTextLineEntity.PartitionKey), QueryComparisons.Equal, ParsedInContactTextLineEntity.IN_CONTACT_PRIMARY_KEY),

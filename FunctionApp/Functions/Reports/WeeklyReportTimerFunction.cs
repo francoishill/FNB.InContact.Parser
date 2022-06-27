@@ -15,7 +15,6 @@ public static class WeeklyReportTimerFunction
     public static async Task RunAsync(
         [TimerTrigger("0 0 13 * * SAT")] TimerInfo myTimer,
         ILogger log,
-        [Table("BankReferenceToCategoryMappings")] CloudTable bankReferenceMappingsTable,
         [Table("ParsedInContactTextLines")] CloudTable parsedEntitiesTable,
         [Table("NonParsedInContactTextLines")] CloudTable nonParsedEntitiesTable,
         [SendGrid(ApiKey = "SendGridApiKey", From = "%FromEmailAddress%", To = "%ToEmailAddress%")] IAsyncCollector<SendGridMessage> emailMessageCollector,
@@ -36,8 +35,6 @@ public static class WeeklyReportTimerFunction
         var reportBuilder = new ReportBuilderService();
 
         var emailSubject = await reportBuilder.GenerateReportEmailSubject(
-            log,
-            bankReferenceMappingsTable,
             parsedEntitiesTable,
             nonParsedEntitiesTable,
             startDate,
