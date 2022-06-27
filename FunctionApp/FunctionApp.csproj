@@ -8,6 +8,7 @@
     <ItemGroup>
         <PackageReference Include="AngleSharp" Version="0.17.1" />
         <PackageReference Include="Azure.Data.Tables" Version="12.6.0" />
+        <PackageReference Include="Handlebars.Net" Version="2.1.2" />
         <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.33" />
         <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.SendGrid" Version="3.0.2" />
         <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus" Version="5.5.1" />
@@ -24,5 +25,10 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </None>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <None Remove="Templates\HtmlTemplates\ReportForDateRange.html" />
+      <EmbeddedResource Include="Templates\HtmlTemplates\ReportForDateRange.handlebars" />
     </ItemGroup>
 </Project>

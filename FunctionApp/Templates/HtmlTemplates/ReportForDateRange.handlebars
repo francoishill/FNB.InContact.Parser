@@ -1,0 +1,56 @@
+﻿<h1>Summary</h1>
+
+{{#each SummaryItems}}
+    <details>
+        <summary> {{ this.Summary }} </summary>
+        <ul>
+            {{#each this.LineItems}}
+                <li>{{ this.Text }}</li>
+            {{/each}}
+        </ul>
+    </details>
+{{/each}}
+
+
+<h1>Parsed entries</h1>
+
+<table style="border: 1px solid #ccc; border-collapse: collapse;">
+    <thead>
+    <tr>
+        {{#each ParsedEntries.Columns}}
+            <th style="border: 1px solid #ccc"> {{ this.Heading }} </th>
+        {{/each}}
+    </tr>
+    </thead>
+    <tbody>
+    {{#each ParsedEntries.Rows}}
+        <tr>
+            {{#each this.Cells}}
+                <td style="border: 1px solid #ccc"> {{ this.Text }} </td>
+            {{/each}}
+        </tr>
+    {{/each}}
+    </tbody>
+</table>
+
+
+<h1>Non-parsed entries</h1>
+
+<table style="border: 1px solid #ccc; border-collapse: collapse;">
+    <thead>
+    <tr>
+        {{#each NonParsedEntries.Columns}}
+            <th style="border: 1px solid #ccc"> {{ this.Heading }} </th>
+        {{/each}}
+    </tr>
+    </thead>
+    <tbody>
+    {{#each NonParsedEntries.Rows}}
+        <tr>
+            {{#each this.Cells}}
+                <td style="border: 1px solid #ccc"> {{ this.Text }} </td>
+            {{/each}}
+        </tr>
+    {{/each}}
+    </tbody>
+</table>

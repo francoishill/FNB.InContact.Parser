@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
+using FNB.InContact.Parser.FunctionApp.Models.ReportTypes;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +11,7 @@ namespace FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 
 public static class EmailContentHelper
 {
-    public static string BuildHtmlTable(
+    public static ReportTable BuildParsedEntries(
         IEnumerable<ParsedInContactTextLineEntity> entries)
     {
         var tableCells = new[]
@@ -25,44 +25,31 @@ public static class EmailContentHelper
             new HtmlTableCellDefinition<ParsedInContactTextLineEntity>("Account/Card", backup => $"{backup.AccountType}, {backup.AccountNumber}, {backup.PartialCardNumber}"),
         };
 
-        var htmlBodyBuilder = new StringBuilder();
-
-        htmlBodyBuilder.Append("<table style='border: 1px solid #ccc; border-collapse: collapse;'>");
-        htmlBodyBuilder.Append("<thead>");
-
-        htmlBodyBuilder.Append("<tr>");
+        var columns = new List<ReportTable.TableColumn>();
+        var rows = new List<ReportTable.TableRow>();
 
         foreach (var cellDefinition in tableCells)
         {
-            htmlBodyBuilder.Append($"<th style='border: 1px solid #ccc'>{cellDefinition.ColumnName}</th>");
+            columns.Add(new ReportTable.TableColumn(cellDefinition.ColumnName));
         }
-
-        htmlBodyBuilder.Append("</tr>");
-
-        htmlBodyBuilder.Append("</thead>");
-
-        htmlBodyBuilder.Append("<tbody>");
 
         var sortedBackups = entries.OrderBy(b => b.Timestamp);
         foreach (var backup in sortedBackups)
         {
-            htmlBodyBuilder.Append("<tr>");
+            var rowCells = new List<ReportTable.TableCell>();
 
             foreach (var cellDefinition in tableCells)
             {
-                htmlBodyBuilder.Append($"<td style='border: 1px solid #ccc'>{cellDefinition.ValueGetter(backup)}</td>");
+                rowCells.Add(new ReportTable.TableCell(cellDefinition.ValueGetter(backup)));
             }
 
-            htmlBodyBuilder.Append("</tr>");
+            rows.Add(new ReportTable.TableRow(rowCells));
         }
 
-        htmlBodyBuilder.Append("</tbody>");
-        htmlBodyBuilder.Append("</table>");
-
-        return htmlBodyBuilder.ToString().Replace("\n", "<br>");
+        return new ReportTable(columns, rows);
     }
 
-    public static string BuildHtmlTable(
+    public static ReportTable BuildNonParsedEntries(
         IEnumerable<NonParsedInContactTextLineEntity> entries)
     {
         var tableCells = new[]
@@ -70,44 +57,31 @@ public static class EmailContentHelper
             new HtmlTableCellDefinition<NonParsedInContactTextLineEntity>("Text Line", backup => backup.TextLine),
         };
 
-        var htmlBodyBuilder = new StringBuilder();
-
-        htmlBodyBuilder.Append("<table style='border: 1px solid #ccc; border-collapse: collapse;'>");
-        htmlBodyBuilder.Append("<thead>");
-
-        htmlBodyBuilder.Append("<tr>");
+        var columns = new List<ReportTable.TableColumn>();
+        var rows = new List<ReportTable.TableRow>();
 
         foreach (var cellDefinition in tableCells)
         {
-            htmlBodyBuilder.Append($"<th style='border: 1px solid #ccc'>{cellDefinition.ColumnName}</th>");
+            columns.Add(new ReportTable.TableColumn(cellDefinition.ColumnName));
         }
-
-        htmlBodyBuilder.Append("</tr>");
-
-        htmlBodyBuilder.Append("</thead>");
-
-        htmlBodyBuilder.Append("<tbody>");
 
         var sortedBackups = entries.OrderBy(b => b.Timestamp);
         foreach (var backup in sortedBackups)
         {
-            htmlBodyBuilder.Append("<tr>");
-
+            var rowCells = new List<ReportTable.TableCell>();
+            
             foreach (var cellDefinition in tableCells)
             {
-                htmlBodyBuilder.Append($"<td style='border: 1px solid #ccc'>{cellDefinition.ValueGetter(backup)}</td>");
+                rowCells.Add(new ReportTable.TableCell(cellDefinition.ValueGetter(backup)));
             }
 
-            htmlBodyBuilder.Append("</tr>");
+            rows.Add(new ReportTable.TableRow(rowCells));
         }
 
-        htmlBodyBuilder.Append("</tbody>");
-        htmlBodyBuilder.Append("</table>");
-
-        return htmlBodyBuilder.ToString().Replace("\n", "<br>");
+        return new ReportTable(columns, rows);
     }
 
-    public static string BuildHtmlSummaries(
+    public static IEnumerable<ReportSummaryItem> BuildSummaryItems(
         ILogger logger,
         IEnumerable<BankReferenceToCategoryMappingEntity> bankReferenceMappings,
         IReadOnlyCollection<ParsedInContactTextLineEntity> parsedEntries)
@@ -123,7 +97,7 @@ public static class EmailContentHelper
 
         var patternsGroupedByCategory = patternWithBankReferenceMappings.GroupBy(p => p.Mapping.CategoryName);
 
-        var summariesHtml = new StringBuilder();
+        var summaryItems = new List<ReportSummaryItem>();
 
         var successfullyMappedEntries = new List<ParsedInContactTextLineEntity>();
         foreach (var categoryGroup in patternsGroupedByCategory)
@@ -154,40 +128,27 @@ public static class EmailContentHelper
             successfullyMappedEntries.AddRange(matchingEntries.Where(m => !successfullyMappedEntries.Contains(m)));
 
             var sign = firstDirection == BankReferenceToCategoryMappingEntity.TransactionDirection.Income ? "+" : "-";
-            AppendHtmlForCategoryAndEntries(matchingEntries, categoryName, sign, summariesHtml);
+            AppendHtmlForCategoryAndEntries(matchingEntries, categoryName, sign, summaryItems);
         }
 
         var unmappedEntries = parsedEntries.Where(entry => !successfullyMappedEntries.Contains(entry)).ToList();
-        AppendHtmlForCategoryAndEntries(unmappedEntries, "Unknown", "?", summariesHtml);
+        AppendHtmlForCategoryAndEntries(unmappedEntries, "Unknown", "?", summaryItems);
 
-        return summariesHtml.ToString();
+        return summaryItems;
     }
 
     private static void AppendHtmlForCategoryAndEntries(
-        List<ParsedInContactTextLineEntity> matchingEntries,
+        IReadOnlyCollection<ParsedInContactTextLineEntity> matchingEntries,
         string categoryName,
         string sign,
-        StringBuilder summariesHtml)
+        ICollection<ReportSummaryItem> summaryItems)
     {
-        summariesHtml.Append("<details>");
-
         var categoryTotalAmount = matchingEntries.Sum(entry => entry.Amount);
-
         var categorySummaryText = $"{categoryName} {sign}R {categoryTotalAmount}";
-        summariesHtml.Append($"<summary>{categorySummaryText}</summary>");
 
-        summariesHtml.Append("<p>");
-        summariesHtml.Append("<ul>");
+        var lineItems = matchingEntries.Select(matchingEntry => new ReportSummaryItem.LineItem(matchingEntry.ToSummaryString())).ToList();
 
-        foreach (var matchingEntry in matchingEntries)
-        {
-            summariesHtml.Append($"<li>{matchingEntry.ToSummaryString()}</li>");
-        }
-
-        summariesHtml.Append("</ul>");
-        summariesHtml.Append("</p>");
-
-        summariesHtml.Append("</details>");
+        summaryItems.Add(new ReportSummaryItem(categorySummaryText, lineItems));
     }
 
     private class HtmlTableCellDefinition<T>

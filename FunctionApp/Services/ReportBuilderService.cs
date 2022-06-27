@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
+using FNB.InContact.Parser.FunctionApp.Templates;
+using HandlebarsDotNet;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Logging;
 
@@ -70,14 +72,17 @@ public class ReportBuilderService
 
         var nonParsedEntries = (await AzureTableHelper.GetTableRecords(nonParsedEntitiesTable, nonParsedRecordsFilter, cancellationToken)).ToList();
 
-        var htmlBody =
-            "<h1>Summary</h1>" +
-            EmailContentHelper.BuildHtmlSummaries(logger, bankReferenceMappings, parsedEntries) +
-            "<h1>Parsed entries</h1>" +
-            EmailContentHelper.BuildHtmlTable(parsedEntries) +
-            "<h1>Non-parsed entries</h1>" +
-            EmailContentHelper.BuildHtmlTable(nonParsedEntries);
+        var htmlBodyTemplate = await TemplateHelpers.GetHtmlTemplateStringAsync("ReportForDateRange.handlebars");
+        var template = Handlebars.Compile(htmlBodyTemplate);
 
+        var data = new
+        {
+            SummaryItems = EmailContentHelper.BuildSummaryItems(logger, bankReferenceMappings, parsedEntries),
+            ParsedEntries = EmailContentHelper.BuildParsedEntries(parsedEntries),
+            NonParsedEntries = EmailContentHelper.BuildNonParsedEntries(nonParsedEntries),
+        };
+
+        var htmlBody = template(data);
         return htmlBody;
     }
 
