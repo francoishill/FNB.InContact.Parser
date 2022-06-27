@@ -23,12 +23,19 @@ public static class WeeklyReportTimerFunction
     {
         log.LogInformation("C# Timer trigger function executed at: {Date}", DateTime.UtcNow);
 
+        var functionAppBaseUrl = Environment.GetEnvironmentVariable("FunctionAppBaseUrl");
+        if (string.IsNullOrWhiteSpace(functionAppBaseUrl))
+        {
+            log.LogCritical("Environment variable FunctionAppBaseUrl is required but empty");
+            throw new Exception("Environment variable FunctionAppBaseUrl is required but empty");
+        }
+
         var endDate = DateTime.UtcNow.Date;
         var startDate = endDate.AddDays(-7);
 
         var reportBuilder = new ReportBuilderService();
 
-        var reportResult = await reportBuilder.GenerateHtmlReport(
+        var emailSubject = await reportBuilder.GenerateReportEmailSubject(
             log,
             bankReferenceMappingsTable,
             parsedEntitiesTable,
@@ -37,10 +44,15 @@ public static class WeeklyReportTimerFunction
             endDate,
             cancellationToken);
 
+        var startDateString = startDate.ToString("O");
+        var endDateString = endDate.ToString("O");
+        var linkToReport = functionAppBaseUrl.TrimEnd('/') + $"/api/{nameof(GetReportForDateRange)}?startDate={startDateString}&endDate={endDateString}";
+        var linkHtml = $"<a href=\"{linkToReport}\">{linkToReport}</a>";
+
         var message = new SendGridMessage();
 
-        message.AddContent("text/html", reportResult.Body);
-        message.SetSubject(reportResult.Subject);
+        message.AddContent("text/html", $"View the report here:<br>{linkHtml}");
+        message.SetSubject(emailSubject);
 
         await emailMessageCollector.AddAsync(message, cancellationToken);
     }

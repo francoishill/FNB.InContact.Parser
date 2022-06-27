@@ -141,7 +141,7 @@ public static class EmailContentHelper
             var firstDirection = distinctDirections.First();
 
             var matchingEntries = parsedEntries
-                .Where(entry => categoryGroup.Any(group => 
+                .Where(entry => categoryGroup.Any(group =>
                     group.Regex.IsMatch(entry.Reference)
                     || group.Regex.IsMatch(entry.Action)))
                 .ToList();

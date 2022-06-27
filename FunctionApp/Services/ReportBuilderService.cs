@@ -11,7 +11,7 @@ namespace FNB.InContact.Parser.FunctionApp.Services;
 
 public class ReportBuilderService
 {
-    public async Task<HtmlReportResult> GenerateHtmlReport(
+    public async Task<string> GenerateReportEmailSubject(
         ILogger logger,
         CloudTable bankReferenceMappingsTable,
         CloudTable parsedEntitiesTable,
@@ -42,6 +42,38 @@ public class ReportBuilderService
 
         var subject = $"FNB InContact Parser: Parsed {parsedEntries.Count} ({nonParsedEntries.Count} non-parsable) entries between {startDate:dd MMM} and {endDate:dd MMM}";
 
+        return subject;
+    }
+
+    public async Task<string> GenerateReportHtml(
+        ILogger logger,
+        CloudTable bankReferenceMappingsTable,
+        CloudTable parsedEntitiesTable,
+        CloudTable nonParsedEntitiesTable,
+        DateTime startDate,
+        DateTime endDate,
+        CancellationToken cancellationToken)
+    {
+        var bankReferenceMappings = (await AzureTableHelper.GetTableRecords(bankReferenceMappingsTable, new TableQuery<BankReferenceToCategoryMappingEntity>(), cancellationToken)).ToList();
+
+        var parsedRecordsFilter = new TableQuery<ParsedInContactTextLineEntity>().Where(
+            TableQuery.CombineFilters(
+                TableQuery.GenerateFilterCondition(nameof(ParsedInContactTextLineEntity.PartitionKey), QueryComparisons.Equal, ParsedInContactTextLineEntity.IN_CONTACT_PRIMARY_KEY),
+                TableOperators.And,
+                GetFilterForDateRange(startDate, endDate)
+            ));
+
+        var parsedEntries = (await AzureTableHelper.GetTableRecords(parsedEntitiesTable, parsedRecordsFilter, cancellationToken)).ToList();
+
+        var nonParsedRecordsFilter = new TableQuery<NonParsedInContactTextLineEntity>().Where(
+            TableQuery.CombineFilters(
+                TableQuery.GenerateFilterCondition(nameof(NonParsedInContactTextLineEntity.PartitionKey), QueryComparisons.Equal, NonParsedInContactTextLineEntity.IN_CONTACT_PRIMARY_KEY),
+                TableOperators.And,
+                GetFilterForDateRange(startDate, endDate)
+            ));
+
+        var nonParsedEntries = (await AzureTableHelper.GetTableRecords(nonParsedEntitiesTable, nonParsedRecordsFilter, cancellationToken)).ToList();
+
         var htmlBody =
             "<h1>Summary</h1>" +
             EmailContentHelper.BuildHtmlSummaries(logger, bankReferenceMappings, parsedEntries) +
@@ -50,17 +82,7 @@ public class ReportBuilderService
             "<h1>Non-parsed entries</h1>" +
             EmailContentHelper.BuildHtmlTable(nonParsedEntries);
 
-        return new HtmlReportResult
-        {
-            Subject = subject,
-            Body = htmlBody,
-        };
-    }
-
-    public class HtmlReportResult
-    {
-        public string Subject { get; set; }
-        public string Body { get; set; }
+        return htmlBody;
     }
 
     private static string GetFilterForDateRange(

@@ -15,7 +15,7 @@ namespace FNB.InContact.Parser.FunctionApp.Functions.Reports;
 
 public static class GetReportForDateRange
 {
-    [FunctionName("GetReportForDateRange")]
+    [FunctionName(nameof(GetReportForDateRange))]
     public static async Task<IActionResult> RunAsync(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
         ILogger log,
@@ -45,7 +45,7 @@ public static class GetReportForDateRange
 
         var reportBuilder = new ReportBuilderService();
 
-        var reportResult = await reportBuilder.GenerateHtmlReport(
+        var reportHtml = await reportBuilder.GenerateReportHtml(
             log,
             bankReferenceMappingsTable,
             parsedEntitiesTable,
@@ -57,7 +57,7 @@ public static class GetReportForDateRange
         return new ContentResult
         {
             StatusCode = (int)HttpStatusCode.OK,
-            Content = reportResult.Body,
+            Content = reportHtml,
             ContentType = "text/html",
         };
     }
