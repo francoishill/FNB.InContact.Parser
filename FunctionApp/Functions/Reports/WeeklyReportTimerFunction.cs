@@ -22,12 +22,8 @@ public static class WeeklyReportTimerFunction
     {
         log.LogInformation("C# Timer trigger function executed at: {Date}", DateTime.UtcNow);
 
-        var functionAppBaseUrl = Environment.GetEnvironmentVariable("FunctionAppBaseUrl");
-        if (string.IsNullOrWhiteSpace(functionAppBaseUrl))
-        {
-            log.LogCritical("Environment variable FunctionAppBaseUrl is required but empty");
-            throw new Exception("Environment variable FunctionAppBaseUrl is required but empty");
-        }
+        var functionAppBaseUrl = GetRequiredEnvironmentVariable(log, "FunctionAppBaseUrl");
+        var functionAppReportSecretCode = GetRequiredEnvironmentVariable(log, "FunctionAppReportSecretCode");
 
         var endDate = DateTime.UtcNow.Date;
         var startDate = endDate.AddDays(-7);
@@ -43,7 +39,7 @@ public static class WeeklyReportTimerFunction
 
         var startDateString = startDate.ToString("O");
         var endDateString = endDate.ToString("O");
-        var linkToReport = functionAppBaseUrl.TrimEnd('/') + $"/api/{nameof(GetReportForDateRange)}?startDate={startDateString}&endDate={endDateString}";
+        var linkToReport = functionAppBaseUrl.TrimEnd('/') + $"/api/{nameof(GetReportForDateRange)}?startDate={startDateString}&endDate={endDateString}&code={functionAppReportSecretCode}";
         var linkHtml = $"<a href=\"{linkToReport}\">{linkToReport}</a>";
 
         var message = new SendGridMessage();
@@ -52,5 +48,18 @@ public static class WeeklyReportTimerFunction
         message.SetSubject(emailSubject);
 
         await emailMessageCollector.AddAsync(message, cancellationToken);
+    }
+
+    private static string GetRequiredEnvironmentVariable(ILogger log, string key)
+    {
+        var value = Environment.GetEnvironmentVariable(key);
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            log.LogCritical("Environment variable {Key} is required but empty", key);
+            throw new Exception($"Environment variable {key} is required but empty");
+        }
+
+        return value;
     }
 }
