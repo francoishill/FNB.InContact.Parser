@@ -131,7 +131,7 @@ public static class EmailContentHelper
             var categoryName = categoryGroup.Key;
             var distinctDirections = categoryGroup.Select(group => group.Mapping.Direction).Distinct().ToList();
 
-            if (distinctDirections.Count > 0)
+            if (distinctDirections.Count > 1)
             {
                 logger.LogWarning(
                     "Category mappings Directions are inconsistent, category '{Category}' has the following directions: {Directions}",
