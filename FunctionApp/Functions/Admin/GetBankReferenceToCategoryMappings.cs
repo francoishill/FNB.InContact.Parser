@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
@@ -26,26 +25,18 @@ public static class GetBankReferenceToCategoryMappings
 
         var mappingEntities = (await AzureTableHelper.GetTableRecords(bankReferenceMappingsTable, new TableQuery<BankReferenceToCategoryMappingEntity>(), cancellationToken)).ToList();
 
-        return new OkObjectResult(new ResponseDto
+        return new OkObjectResult(mappingEntities.Select(mappingEntity => new BankReferenceToCategoryMappingDto
         {
-            Mappings = mappingEntities.Select(mappingEntity => new ResponseDto.BankReferenceToCategoryMapping
-            {
-                Direction = mappingEntity.Direction.ToString(),
-                BankReferenceRegexPattern = mappingEntity.BankReferenceRegexPattern,
-                CategoryName = mappingEntity.CategoryName,
-            }).ToList(),
-        });
+            Direction = mappingEntity.Direction.ToString(),
+            BankReferenceRegexPattern = mappingEntity.BankReferenceRegexPattern,
+            CategoryName = mappingEntity.CategoryName,
+        }));
     }
 
-    private class ResponseDto
+    private class BankReferenceToCategoryMappingDto
     {
-        public List<BankReferenceToCategoryMapping> Mappings { get; set; }
-
-        public class BankReferenceToCategoryMapping
-        {
-            public string Direction { get; set; }
-            public string BankReferenceRegexPattern { get; set; }
-            public string CategoryName { get; set; }
-        }
+        public string Direction { get; set; }
+        public string BankReferenceRegexPattern { get; set; }
+        public string CategoryName { get; set; }
     }
 }

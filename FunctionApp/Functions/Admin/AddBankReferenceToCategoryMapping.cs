@@ -37,14 +37,10 @@ public static class AddBankReferenceToCategoryMapping
         log.LogInformation("C# HTTP trigger function processed a request");
 
         var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-        var requestDTO = JsonConvert.DeserializeObject<RequestDto>(requestBody);
-        if (!ValidationHelpers.ValidateDataAnnotations(requestDTO, out var validationResultsForRequest))
-        {
-            return HttpResponseFactory.CreateBadRequestResponse(new[] { "Request body is invalid" }.Concat(validationResultsForRequest.Select(s => s.ErrorMessage)).ToArray());
-        }
+        var requestMappings = JsonConvert.DeserializeObject<BankReferenceToCategoryMappingDto[]>(requestBody);
 
         var mappingValidationErrors = new List<string>();
-        foreach (var mapping in requestDTO.Mappings)
+        foreach (var mapping in requestMappings)
         {
             if (!ValidationHelpers.ValidateDataAnnotations(mapping, out var validationResultsForMapping))
             {
@@ -60,11 +56,11 @@ public static class AddBankReferenceToCategoryMapping
         var response = new ResponseDto
         {
             SuccessfullyAddedCount = 0,
-            AlreadyExistingEntities = new List<RequestDto.BankReferenceToCategoryMapping>(),
-            FailedEntities = new List<RequestDto.BankReferenceToCategoryMapping>(),
+            AlreadyExistingEntities = new List<BankReferenceToCategoryMappingDto>(),
+            FailedEntities = new List<BankReferenceToCategoryMappingDto>(),
         };
 
-        foreach (var mapping in requestDTO.Mappings)
+        foreach (var mapping in requestMappings)
         {
             if (mapping.Direction == null)
             {
@@ -92,7 +88,7 @@ public static class AddBankReferenceToCategoryMapping
             }
         }
 
-        if (response.SuccessfullyAddedCount != requestDTO.Mappings.Count)
+        if (response.SuccessfullyAddedCount != requestMappings.Length)
         {
             return new BadRequestObjectResult(response);
         }
@@ -100,22 +96,16 @@ public static class AddBankReferenceToCategoryMapping
         return new OkObjectResult(response);
     }
 
-    private class RequestDto
+    private class BankReferenceToCategoryMappingDto
     {
-        [Required, MinLength(1)]
-        public List<BankReferenceToCategoryMapping> Mappings { get; set; }
+        [Required]
+        public TransactionDirection? Direction { get; set; }
 
-        public class BankReferenceToCategoryMapping
-        {
-            [Required]
-            public TransactionDirection? Direction { get; set; }
+        [Required, MinLength(2)]
+        public string BankReferenceRegexPattern { get; set; }
 
-            [Required, MinLength(2)]
-            public string BankReferenceRegexPattern { get; set; }
-
-            [Required, MinLength(2)]
-            public string CategoryName { get; set; }
-        }
+        [Required, MinLength(2)]
+        public string CategoryName { get; set; }
     }
 
     private class ResponseDto
@@ -123,7 +113,7 @@ public static class AddBankReferenceToCategoryMapping
         public int SuccessfullyAddedCount { get; set; }
         public int AlreadyExistingEntitiesCount => AlreadyExistingEntities.Count;
         public int NonSavedEntitiesCount => FailedEntities.Count;
-        public List<RequestDto.BankReferenceToCategoryMapping> AlreadyExistingEntities { get; set; }
-        public List<RequestDto.BankReferenceToCategoryMapping> FailedEntities { get; set; }
+        public List<BankReferenceToCategoryMappingDto> AlreadyExistingEntities { get; set; }
+        public List<BankReferenceToCategoryMappingDto> FailedEntities { get; set; }
     }
 }
