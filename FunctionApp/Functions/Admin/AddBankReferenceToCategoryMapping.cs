@@ -78,7 +78,7 @@ public static class AddBankReferenceToCategoryMapping
 
             try
             {
-                await mappingsTable.ExecuteAsync(TableOperation.Insert(entity), cancellationToken);
+                await mappingsTable.ExecuteAsync(TableOperation.InsertOrReplace(entity), cancellationToken);
                 response.SuccessfullyAddedCount++;
             }
             catch (StorageException storageException) when (storageException.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
