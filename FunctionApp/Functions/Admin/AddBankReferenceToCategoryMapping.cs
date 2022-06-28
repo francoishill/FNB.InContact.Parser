@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Infrastructure.Factories;
 using FNB.InContact.Parser.FunctionApp.Infrastructure.Validation;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
+using FNB.InContact.Parser.FunctionApp.Models.ValueObjects;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos.Table;
@@ -107,7 +108,7 @@ public static class AddBankReferenceToCategoryMapping
         public class BankReferenceToCategoryMapping
         {
             [Required]
-            public BankReferenceToCategoryMappingEntity.TransactionDirection? Direction { get; set; }
+            public TransactionDirection? Direction { get; set; }
 
             [Required, MinLength(2)]
             public string BankReferenceRegexPattern { get; set; }

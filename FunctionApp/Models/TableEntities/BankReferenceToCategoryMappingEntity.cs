@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Web;
+using FNB.InContact.Parser.FunctionApp.Models.ValueObjects;
 using Microsoft.Azure.Cosmos.Table;
 
 namespace FNB.InContact.Parser.FunctionApp.Models.TableEntities;
@@ -25,11 +26,5 @@ public class BankReferenceToCategoryMappingEntity : TableEntity
         RowKey = HttpUtility.UrlEncode(bankReferenceRegexPattern);
 
         CategoryName = categoryName;
-    }
-
-    public enum TransactionDirection
-    {
-        Income,
-        Expense,
     }
 }

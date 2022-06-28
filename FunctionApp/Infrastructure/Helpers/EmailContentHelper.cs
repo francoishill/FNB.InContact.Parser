@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using FNB.InContact.Parser.FunctionApp.Models.ReportTypes;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
+using FNB.InContact.Parser.FunctionApp.Models.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
@@ -127,7 +128,7 @@ public static class EmailContentHelper
 
             successfullyMappedEntries.AddRange(matchingEntries.Where(m => !successfullyMappedEntries.Contains(m)));
 
-            var sign = firstDirection == BankReferenceToCategoryMappingEntity.TransactionDirection.Income ? "+" : "-";
+            var sign = firstDirection == TransactionDirection.Income ? "+" : "-";
             AppendHtmlForCategoryAndEntries(matchingEntries, categoryName, sign, summaryItems);
         }
 
