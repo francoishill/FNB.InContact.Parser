@@ -8,6 +8,7 @@ public class ParsedInContactTextLineEntity : TableEntity
 {
     public const string IN_CONTACT_PRIMARY_KEY = "InContactText";
 
+    public string Direction { get; set; }
     public double Amount { get; set; }
     public string Action { get; set; }
     public string AccountType { get; set; }
@@ -21,6 +22,6 @@ public class ParsedInContactTextLineEntity : TableEntity
 
     public string ToSummaryString()
     {
-        return $"{Amount} {Action} {Reference} {Method} {Date} {Time} {Available} {AccountType}, {AccountNumber}, {PartialCardNumber}";
+        return $"[{Direction}] {Amount} {Action} {Reference} {Method} {Date} {Time} {Available} {AccountType}, {AccountNumber}, {PartialCardNumber}";
     }
 }

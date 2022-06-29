@@ -1,4 +1,9 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Linq;
+using System.Text.RegularExpressions;
+using FNB.InContact.Parser.FunctionApp.Models.ServiceResults;
+using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
+using FNB.InContact.Parser.FunctionApp.Models.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace FNB.InContact.Parser.FunctionApp.Services;
@@ -12,14 +17,44 @@ public class InContactTextParser
         _logger = logger;
     }
 
+    public TransactionDirection GetTransactionDirectionFromAction(string action)
+    {
+        var incomeActions = new[]
+        {
+            "paid to",
+            "REVERSAL of",
+        };
+
+        var expenseActions = new[]
+        {
+            "paid from",
+            "reserved for purchase",
+            "withdrawn from",
+            "t/fer from",
+        };
+
+        if (incomeActions.Any(subText => action.Contains(subText, StringComparison.OrdinalIgnoreCase)))
+        {
+            return TransactionDirection.Income;
+        }
+
+        if (expenseActions.Any(subText => action.Contains(subText, StringComparison.OrdinalIgnoreCase)))
+        {
+            return TransactionDirection.Expense;
+        }
+
+        return TransactionDirection.Unknown;
+    }
+
     public ParsedInContactLine ParseInContactLines(string text)
     {
         var patterns = new[]
         {
-            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>paid from) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) @ (?<Method>.+)\. Avail R(?<Available>[\d\.]+)\. Ref\.(?<Reference>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
             new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>paid to) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) @ (?<Method>.+)\. Ref\.(?<Reference>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
-            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>reserved for purchase) @ (?<Reference>.+) from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
             new Regex(@"FNB\s?:-?\) (?<Action>REVERSAL of) R(?<Amount>[\d\.]+) for (?<Reference>.+) from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
+
+            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>paid from) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) @ (?<Method>.+)\. Avail R(?<Available>[\d\.]+)\. Ref\.(?<Reference>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
+            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>reserved for purchase) @ (?<Reference>.+) from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
             new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>withdrawn from) (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+) @ (?<Reference>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
             new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>t\/fer from) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) to (?<Reference>.+) @ (?<Method>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
         };
@@ -49,10 +84,20 @@ public class InContactTextParser
                 available = availableMatch;
             }
 
+            var action = match.Groups["Action"].Value;
+
+            var direction = GetTransactionDirectionFromAction(action);
+            if (direction == TransactionDirection.Unknown)
+            {
+                _logger.LogError("Unable to determine transaction direction from Action '{Action}'", action);
+                continue;
+            }
+
             return new ParsedInContactLine
             {
+                Direction = direction,
                 Amount = amount,
-                Action = match.Groups["Action"].Value,
+                Action = action,
                 AccountType = match.Groups["AccountType"].Value,
                 AccountNumber = match.Groups["AccountNumber"].Value,
                 PartialCardNumber = match.Groups["PartialCardNumber"].Value,
@@ -67,17 +112,19 @@ public class InContactTextParser
         throw new UnableToParseInContactTextException($"Unable to parse incontact text '{text}'");
     }
 
-    public class ParsedInContactLine
+    public string ReBuildRawTextLineFromParsedEntry(string action, ParsedInContactTextLineEntity entry)
     {
-        public double Amount { get; set; }
-        public string Action { get; set; }
-        public string AccountType { get; set; }
-        public string AccountNumber { get; set; }
-        public string PartialCardNumber { get; set; }
-        public string Method { get; set; }
-        public double? Available { get; set; }
-        public string Reference { get; set; }
-        public string Date { get; set; }
-        public string Time { get; set; }
+        var amountFormatted = $"{entry.Amount:0.00}";
+
+        return action switch
+        {
+            "paid to" => $"FNB:-) R{amountFormatted} paid to {entry.AccountType} a/c..{entry.AccountNumber} @ {entry.Method}. Ref.{entry.Reference}. {entry.Date} {entry.Time}",
+            "REVERSAL of" => $"FNB :-) REVERSAL of R{amountFormatted} for {entry.Reference} from {entry.AccountType} a/c..{entry.AccountNumber} using {entry.Method}..{entry.PartialCardNumber}. {entry.Date} {entry.Time}",
+            "paid from" => $"FNB:-) R{amountFormatted} paid from {entry.AccountType} a/c..{entry.AccountNumber} @ {entry.Method}. Avail R{(int?)entry.Available}. Ref.{entry.Reference}. {entry.Date} {entry.Time}",
+            "reserved for purchase" => $"FNB :-) R{amountFormatted} reserved for purchase @ {entry.Reference} from {entry.AccountType} a/c..{entry.AccountNumber} using {entry.Method}..{entry.PartialCardNumber}. Avail R{(int?)entry.Available}. {entry.Date} {entry.Time}",
+            "withdrawn from" => $"FNB:-) R{amountFormatted} withdrawn from {entry.AccountType} a/c..{entry.AccountNumber} using {entry.Method}..{entry.PartialCardNumber} @ {entry.Reference}. Avail R{(int?)entry.Available}. {entry.Date} {entry.Time}",
+            "t/fer from" => $"FNB:-) R{amountFormatted} t/fer from {entry.AccountType} a/c..{entry.AccountNumber} to {entry.Reference} @ {entry.Method}. Avail R{(int?)entry.Available}. {entry.Date} {entry.Time}",
+            _ => throw new ArgumentOutOfRangeException(nameof(action))
+        };
     }
 }

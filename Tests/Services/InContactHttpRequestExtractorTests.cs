@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
-namespace FNB.InContact.Parser.Tests;
+namespace FNB.InContact.Parser.Tests.Services;
 
 public class InContactHttpRequestExtractorTests
 {

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Models.BusMessages;
+using FNB.InContact.Parser.FunctionApp.Models.ServiceResults;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 using FNB.InContact.Parser.FunctionApp.Services;
 using Microsoft.Azure.WebJobs;
@@ -21,6 +22,7 @@ public static class ProcessSendGridEmail
         ILogger log,
         [Table("ParsedInContactTextLines")] IAsyncCollector<ParsedInContactTextLineEntity> parsedEntitiesCollector,
         [Table("NonParsedInContactTextLines")] IAsyncCollector<NonParsedInContactTextLineEntity> nonParsedEntitiesCollector,
+        [Table("RawTextOfParsedLines")] IAsyncCollector<RawTextOfParsedLineEntity> rawTextOfParsedLineEntitiesCollector,
         CancellationToken cancellationToken)
     {
         log.LogInformation("C# ServiceBus queue trigger function processed message: {Message}", receivedSendGridEmailJson);
@@ -38,7 +40,7 @@ public static class ProcessSendGridEmail
 
         var parser = new InContactTextParser(log);
 
-        var parsedEntities = new List<InContactTextParser.ParsedInContactLine>();
+        var parsedEntities = new List<ParsedInContactLine>();
         var nonParsedEntities = new List<string>();
 
         foreach (var textLine in extractedLines)
@@ -47,10 +49,14 @@ public static class ProcessSendGridEmail
             {
                 var parsedEntity = parser.ParseInContactLines(textLine);
 
+                var partitionKey = ParsedInContactTextLineEntity.IN_CONTACT_PRIMARY_KEY;
+                var rowKey = Guid.NewGuid().ToString();
+
                 await parsedEntitiesCollector.AddAsync(new ParsedInContactTextLineEntity
                 {
-                    PartitionKey = ParsedInContactTextLineEntity.IN_CONTACT_PRIMARY_KEY,
-                    RowKey = Guid.NewGuid().ToString(),
+                    PartitionKey = partitionKey,
+                    RowKey = rowKey,
+                    Direction = parsedEntity.Direction.ToString(),
                     Amount = parsedEntity.Amount,
                     Action = parsedEntity.Action,
                     AccountType = parsedEntity.AccountType,
@@ -64,6 +70,13 @@ public static class ProcessSendGridEmail
                 }, cancellationToken);
 
                 parsedEntities.Add(parsedEntity);
+
+                await rawTextOfParsedLineEntitiesCollector.AddAsync(new RawTextOfParsedLineEntity
+                {
+                    PartitionKey = partitionKey,
+                    RowKey = rowKey,
+                    TextLine = textLine,
+                }, cancellationToken);
             }
             catch (UnableToParseInContactTextException)
             {
