@@ -1,6 +1,8 @@
 # FNB.InContact.Parser
 
-A parser for FNB banking incontact emails or SMSs
+A parser for FNB banking InContact emails or SMSs.
+
+[![Deploy FunctionApp](https://github.com/francoishill/FNB.InContact.Parser/actions/workflows/deploy-function-app.yml/badge.svg)](https://github.com/francoishill/FNB.InContact.Parser/actions/workflows/deploy-function-app.yml)
 
 ## Getting started
 
