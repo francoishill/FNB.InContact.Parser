@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Infrastructure.Factories;
 using FNB.InContact.Parser.FunctionApp.Infrastructure.Validation;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
-using FNB.InContact.Parser.FunctionApp.Models.ValueObjects;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos.Table;
@@ -62,13 +61,13 @@ public static class AddBankReferenceToCategoryMapping
 
         foreach (var mapping in requestMappings)
         {
-            if (mapping.Direction == null)
+            if (mapping.MappingType == null)
             {
-                return HttpResponseFactory.CreateBadRequestResponse($"Direction cannot be NULL: {JsonConvert.SerializeObject(mapping)}");
+                return HttpResponseFactory.CreateBadRequestResponse($"MappingType cannot be NULL: {JsonConvert.SerializeObject(mapping)}");
             }
 
             var entity = new BankReferenceToCategoryMappingEntity(
-                mapping.Direction.Value,
+                mapping.MappingType,
                 mapping.BankReferenceRegexPattern,
                 mapping.CategoryName);
 
@@ -99,7 +98,7 @@ public static class AddBankReferenceToCategoryMapping
     private class BankReferenceToCategoryMappingDto
     {
         [Required]
-        public TransactionDirection? Direction { get; set; }
+        public string MappingType { get; set; }
 
         [Required, MinLength(2)]
         public string BankReferenceRegexPattern { get; set; }

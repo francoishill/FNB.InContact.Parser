@@ -27,7 +27,7 @@ public static class GetBankReferenceToCategoryMappings
 
         return new OkObjectResult(mappingEntities.Select(mappingEntity => new BankReferenceToCategoryMappingDto
         {
-            Direction = mappingEntity.Direction.ToString(),
+            MappingType = mappingEntity.MappingType.ToString(),
             BankReferenceRegexPattern = mappingEntity.BankReferenceRegexPattern,
             CategoryName = mappingEntity.CategoryName,
         }));
@@ -35,7 +35,7 @@ public static class GetBankReferenceToCategoryMappings
 
     private class BankReferenceToCategoryMappingDto
     {
-        public string Direction { get; set; }
+        public string MappingType { get; set; }
         public string BankReferenceRegexPattern { get; set; }
         public string CategoryName { get; set; }
     }

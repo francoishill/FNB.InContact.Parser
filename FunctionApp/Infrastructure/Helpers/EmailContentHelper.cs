@@ -7,6 +7,7 @@ using FNB.InContact.Parser.FunctionApp.Models.ReportTypes;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
 using FNB.InContact.Parser.FunctionApp.Models.ValueObjects;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 
@@ -70,7 +71,7 @@ public static class EmailContentHelper
         foreach (var backup in sortedBackups)
         {
             var rowCells = new List<ReportTable.TableCell>();
-            
+
             foreach (var cellDefinition in tableCells)
             {
                 rowCells.Add(new ReportTable.TableCell(cellDefinition.ValueGetter(backup)));
@@ -104,16 +105,6 @@ public static class EmailContentHelper
         foreach (var categoryGroup in patternsGroupedByCategory)
         {
             var categoryName = categoryGroup.Key;
-            var distinctDirections = categoryGroup.Select(group => group.Mapping.Direction).Distinct().ToList();
-
-            if (distinctDirections.Count > 1)
-            {
-                logger.LogWarning(
-                    "Category mappings Directions are inconsistent, category '{Category}' has the following directions: {Directions}",
-                    categoryName, string.Join(", ", distinctDirections.Select(d => d.ToString())));
-            }
-
-            var firstDirection = distinctDirections.First();
 
             var matchingEntries = parsedEntries
                 .Where(entry => categoryGroup.Any(group =>
@@ -128,24 +119,36 @@ public static class EmailContentHelper
 
             successfullyMappedEntries.AddRange(matchingEntries.Where(m => !successfullyMappedEntries.Contains(m)));
 
-            var sign = firstDirection == TransactionDirection.Income ? "+" : "-";
-            AppendHtmlForCategoryAndEntries(matchingEntries, categoryName, sign, summaryItems);
+            AppendHtmlForCategoryAndEntries(logger, matchingEntries, categoryName, summaryItems);
         }
 
         var unmappedEntries = parsedEntries.Where(entry => !successfullyMappedEntries.Contains(entry)).ToList();
-        AppendHtmlForCategoryAndEntries(unmappedEntries, "Unknown", "?", summaryItems);
+
+        AppendHtmlForCategoryAndEntries(logger, unmappedEntries, "Unknown", summaryItems);
 
         return summaryItems;
     }
 
     private static void AppendHtmlForCategoryAndEntries(
+        ILogger logger,
         IReadOnlyCollection<ParsedInContactTextLineEntity> matchingEntries,
         string categoryName,
-        string sign,
         ICollection<ReportSummaryItem> summaryItems)
     {
-        var categoryTotalAmount = matchingEntries.Sum(entry => entry.Amount);
-        var categorySummaryText = $"{categoryName} {sign}R {categoryTotalAmount}";
+        var entriesWithInvalidDirections = matchingEntries
+            .Where(entry => entry.Direction != TransactionDirection.Income.ToString() && entry.Direction != TransactionDirection.Expense.ToString())
+            .ToList();
+        if (entriesWithInvalidDirections.Count > 0)
+        {
+            var invalidDirections = entriesWithInvalidDirections.Select(e => e.Direction?.Trim() ?? "").Distinct();
+            var entriesStrings = entriesWithInvalidDirections.Select(JsonConvert.SerializeObject);
+            logger.LogWarning(
+                "There are {Count} entries in '{Category}' category that have invalid directions, directions: {Directions}, entries: {Entries}",
+                entriesWithInvalidDirections.Count, categoryName, string.Join(", ", invalidDirections), string.Join(". ", entriesStrings));
+        }
+
+        var categoryTotalAmount = matchingEntries.Sum(entry => entry.Direction == TransactionDirection.Expense.ToString() ? -entry.Amount : entry.Amount);
+        var categorySummaryText = $"{categoryName} R {categoryTotalAmount}";
 
         var lineItems = matchingEntries.Select(matchingEntry => new ReportSummaryItem.LineItem(matchingEntry.ToSummaryString())).ToList();
 
