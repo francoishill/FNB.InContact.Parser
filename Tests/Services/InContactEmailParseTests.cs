@@ -162,6 +162,32 @@ public class InContactEmailParseTests
         Assert.Equal("23Jun", parsedEmail.Date);
         Assert.Equal("08:40", parsedEmail.Time);
     }
+    
+    [Fact]
+    public void ParseInContactLines_ReservedFor_MissingReferenceName_ExpectedBehaviour()
+    {
+        // Arrange
+        var logger = Substitute.For<ILogger>();
+        var parser = new InContactTextParser(logger);
+
+        // Act
+        var parsedEmail = parser.ParseInContactLines("FNB :-) R571.54 reserved for purchase from FNB card a/c..123000 using card..8765. Avail R3201. 23Jun 08:40");
+
+        // Assert
+        Assert.NotNull(parsedEmail);
+
+        Assert.Equal(TransactionDirection.Expense, parsedEmail.Direction);
+        Assert.Equal(571.54, parsedEmail.Amount, 3);
+        Assert.Equal("reserved for purchase", parsedEmail.Action);
+        Assert.Equal("FNB card", parsedEmail.AccountType);
+        Assert.Equal("123000", parsedEmail.AccountNumber);
+        Assert.Equal("8765", parsedEmail.PartialCardNumber);
+        Assert.Equal("card", parsedEmail.Method);
+        Assert.Equal(3201, parsedEmail.Available ?? 0, 3);
+        Assert.Equal("[No reference]", parsedEmail.Reference);
+        Assert.Equal("23Jun", parsedEmail.Date);
+        Assert.Equal("08:40", parsedEmail.Time);
+    }
 
     [Fact]
     public void ParseInContactLines_WithdrawnFrom_ExpectedBehaviour()

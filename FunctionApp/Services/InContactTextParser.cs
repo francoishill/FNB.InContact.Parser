@@ -54,7 +54,7 @@ public class InContactTextParser
             new Regex(@"FNB\s?:-?\) (?<Action>REVERSAL of) R(?<Amount>[\d\.]+) for (?<Reference>.+) from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
 
             new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>paid from) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) @ (?<Method>.+)\. Avail R(?<Available>[\d\.]+)\. Ref\.(?<Reference>.+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
-            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>reserved for purchase) @ (?<Reference>.+) from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
+            new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>reserved for purchase)( @ (?<Reference>.+))? from (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
             new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>withdrawn from) (?<AccountType>[^\.]+) a\/c\.\.(?<AccountNumber>.+) using (?<Method>.+)\.\.(?<PartialCardNumber>.+) @ (?<Reference>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
             new Regex(@"FNB\s?:-?\) R(?<Amount>[\d\.]+) (?<Action>t\/fer from) (?<AccountType>.+) a\/c\.\.(?<AccountNumber>.+) to (?<Reference>.+) @ (?<Method>.+)\. Avail R(?<Available>[\d\.]+)\. (?<Date>.+) (?<Time>.+)", RegexOptions.Compiled),
         };
@@ -93,6 +93,12 @@ public class InContactTextParser
                 continue;
             }
 
+            var reference = match.Groups["Reference"].Value;
+            if (string.IsNullOrWhiteSpace(reference))
+            {
+                reference = "[No reference]";
+            }
+
             return new ParsedInContactLine
             {
                 Direction = direction,
@@ -103,7 +109,7 @@ public class InContactTextParser
                 PartialCardNumber = match.Groups["PartialCardNumber"].Value,
                 Method = match.Groups["Method"].Value,
                 Available = available,
-                Reference = match.Groups["Reference"].Value,
+                Reference = reference,
                 Date = match.Groups["Date"].Value,
                 Time = match.Groups["Time"].Value,
             };
