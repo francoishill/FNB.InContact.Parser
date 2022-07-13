@@ -9,10 +9,16 @@ A parser for FNB banking InContact emails or SMSs.
 * Fork this repo
 * Configure your own github action workflows (see the `./github/workflows/deploy-function-app.yml` file)
   * Ensure you specify your own value for `AZURE_FUNCTIONAPP_NAME`
+* Create an Azure Service Bus namespace, the Basic pricing tier is sufficient since you'll only need to create a Queue
 * Deploy your function app and obtain its unique URL for the `ReceiveAndStoreSendGridEmail` function
   * Be sure to add Application Settings (environment variables) in your function app's "Configuration":
-      * `ReceivedSendGridEmailsQueueName`: The queue name it must send/receive messages to/from
-      * `ServiceBus`: Should be a Service Bus connection string to the service bus with an existing queue (with the same name used in `ReceivedSendGridEmailsQueueName` above)
+    * `ServiceBus`: Should be a Service Bus connection string to the service bus with an existing queue (with the same name used in `ReceivedSendGridEmailsQueueName` above)
+    * `ReceivedSendGridEmailsQueueName`: Queue name it must send/receive messages to/from
+    * `SendGridApiKey`: SendGrid API key with permission to Send Mails
+    * `FromEmailAddress`: From email address that will be used to send weekly reports
+    * `ToEmailAddress`: Recipient's email address to which weekly reports will be sent
+    * `FunctionAppBaseUrl`: Base URL of your function itself to be used when generating weekly email containing a link to view the report
+    * `FunctionAppReportSecretCode`: Secret code that will be used in generated link for `GetReportForDateRange` function
 * See the SendGrid documentation on how to set up [SendGrid's Inbound Parse](https://docs.sendgrid.com/for-developers/parsing-email/setting-up-the-inbound-parse-webhook)
   * Use your function app's unique URL as the "Destination URL" of the SendGrid "Inbound Parse" config 
 
