@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Models.BusMessages;
@@ -80,6 +81,12 @@ public static class ProcessSendGridEmail
             }
             catch (UnableToParseInContactTextException)
             {
+                if (IsTextLineIgnorable(textLine))
+                {
+                    log.LogWarning("The following text line could not be parsed but is marked as ignorable, so it will not be added to nonParsedEntities: '{TextLine}'", textLine);
+                    continue;
+                }
+
                 await nonParsedEntitiesCollector.AddAsync(new NonParsedInContactTextLineEntity
                 {
                     PartitionKey = NonParsedInContactTextLineEntity.IN_CONTACT_PRIMARY_KEY,
@@ -101,5 +108,17 @@ public static class ProcessSendGridEmail
         {
             log.LogWarning("Failed to parse {Count} text lines", nonParsedEntities.Count);
         }
+    }
+
+    private static bool IsTextLineIgnorable(string textLine)
+    {
+        var cssPattern1 = new Regex(@"\.[a-zA-Z]+\s*\{\s*color", RegexOptions.Compiled);
+
+        if (cssPattern1.IsMatch(textLine))
+        {
+            return true;
+        }
+
+        return false;
     }
 }
