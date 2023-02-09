@@ -4,10 +4,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Infrastructure.Helpers;
 using FNB.InContact.Parser.FunctionApp.Models.TableEntities;
+using FNB.InContact.Parser.FunctionApp.Services.ServiceResults;
 using FNB.InContact.Parser.FunctionApp.Templates;
 using HandlebarsDotNet;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Logging;
+
+// ReSharper disable RedundantAnonymousTypePropertyName
 
 namespace FNB.InContact.Parser.FunctionApp.Services;
 
@@ -43,7 +46,7 @@ public class ReportBuilderService
         return subject;
     }
 
-    public async Task<string> GenerateReportHtml(
+    public async Task<ReportData> GetDataForReport(
         ILogger logger,
         CloudTable bankReferenceMappingsTable,
         CloudTable parsedEntitiesTable,
@@ -72,17 +75,40 @@ public class ReportBuilderService
 
         var nonParsedEntries = (await AzureTableHelper.GetTableRecords(nonParsedEntitiesTable, nonParsedRecordsFilter, cancellationToken)).ToList();
 
-        var htmlBodyTemplate = await TemplateHelpers.GetHtmlTemplateStringAsync("ReportForDateRange.handlebars");
-        var template = Handlebars.Compile(htmlBodyTemplate);
-
-        var data = new
+        return new ReportData
         {
             SummaryItems = EmailContentHelper.BuildSummaryItems(logger, bankReferenceMappings, parsedEntries),
             ParsedEntries = EmailContentHelper.BuildParsedEntries(parsedEntries),
             NonParsedEntries = EmailContentHelper.BuildNonParsedEntries(nonParsedEntries),
         };
+    }
 
-        var htmlBody = template(data);
+    public async Task<string> GenerateReportHtml(
+        ILogger logger,
+        CloudTable bankReferenceMappingsTable,
+        CloudTable parsedEntitiesTable,
+        CloudTable nonParsedEntitiesTable,
+        DateTime startDate,
+        DateTime endDate,
+        CancellationToken cancellationToken)
+    {
+        var reportData = await GetDataForReport(logger,
+            bankReferenceMappingsTable,
+            parsedEntitiesTable,
+            nonParsedEntitiesTable,
+            startDate,
+            endDate,
+            cancellationToken);
+        var templateDate = new
+        {
+            SummaryItems = reportData.SummaryItems,
+            ParsedEntries = reportData.ParsedEntries,
+            NonParsedEntries = reportData.NonParsedEntries,
+        };
+
+        var htmlBodyTemplate = await TemplateHelpers.GetHtmlTemplateStringAsync("ReportForDateRange.handlebars");
+        var template = Handlebars.Compile(htmlBodyTemplate);
+        var htmlBody = template(templateDate);
         return htmlBody;
     }
 

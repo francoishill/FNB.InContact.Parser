@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FNB.InContact.Parser.FunctionApp.Services;
@@ -15,6 +16,7 @@ public static class WeeklyReportTimerFunction
     public static async Task RunAsync(
         [TimerTrigger("0 0 13 * * SAT")] TimerInfo myTimer,
         ILogger log,
+        [Table("BankReferenceToCategoryMappings")] CloudTable bankReferenceMappingsTable,
         [Table("ParsedInContactTextLines")] CloudTable parsedEntitiesTable,
         [Table("NonParsedInContactTextLines")] CloudTable nonParsedEntitiesTable,
         [SendGrid(ApiKey = "SendGridApiKey", From = "%FromEmailAddress%", To = "%ToEmailAddress%")] IAsyncCollector<SendGridMessage> emailMessageCollector,
@@ -37,6 +39,29 @@ public static class WeeklyReportTimerFunction
             endDate,
             cancellationToken);
 
+        var reportData = await reportBuilder.GetDataForReport(
+            log,
+            bankReferenceMappingsTable,
+            parsedEntitiesTable,
+            nonParsedEntitiesTable,
+            startDate,
+            endDate,
+            cancellationToken);
+
+        var referenceNamesInUnknownCategories = reportData
+            .SummaryItems
+            .Where(s => s.IsUnknownCategory)
+            .SelectMany(s => s.LineItems.Select(l => l.ReferenceName))
+            .Distinct()
+            .ToList();
+
+        var summaryOfUnknownReferences = referenceNamesInUnknownCategories.Count > 0
+            ? "The following transaction References are marked as Unknown:"
+              + "<br><ul>"
+              + string.Join("", referenceNamesInUnknownCategories.Select(refName => $"<li>{refName}</li>"))
+              + "</ul>"
+            : "There are no unknown references in transactions";
+
         var startDateString = startDate.ToString("O");
         var endDateString = endDate.ToString("O");
         var linkToReport = functionAppBaseUrl.TrimEnd('/') + $"/api/{nameof(GetReportForDateRange)}?startDate={startDateString}&endDate={endDateString}&code={functionAppReportSecretCode}";
@@ -44,7 +69,10 @@ public static class WeeklyReportTimerFunction
 
         var message = new SendGridMessage();
 
-        message.AddContent("text/html", $"View the report here:<br>{linkHtml}");
+        message.AddContent("text/html", string.Join("<br>",
+            summaryOfUnknownReferences,
+            "",
+            $"View the report here:<br>{linkHtml}"));
         message.SetSubject(emailSubject);
 
         await emailMessageCollector.AddAsync(message, cancellationToken);

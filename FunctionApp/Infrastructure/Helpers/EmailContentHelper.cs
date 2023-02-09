@@ -119,12 +119,12 @@ public static class EmailContentHelper
 
             successfullyMappedEntries.AddRange(matchingEntries.Where(m => !successfullyMappedEntries.Contains(m)));
 
-            AppendHtmlForCategoryAndEntries(logger, matchingEntries, categoryName, summaryItems);
+            AppendHtmlForCategoryAndEntries(logger, matchingEntries, categoryName, false, summaryItems);
         }
 
         var unmappedEntries = parsedEntries.Where(entry => !successfullyMappedEntries.Contains(entry)).ToList();
 
-        AppendHtmlForCategoryAndEntries(logger, unmappedEntries, "Unknown", summaryItems);
+        AppendHtmlForCategoryAndEntries(logger, unmappedEntries, "Unknown", true, summaryItems);
 
         return summaryItems;
     }
@@ -133,6 +133,7 @@ public static class EmailContentHelper
         ILogger logger,
         IReadOnlyCollection<ParsedInContactTextLineEntity> matchingEntries,
         string categoryName,
+        bool isUnknownCategory,
         ICollection<ReportSummaryItem> summaryItems)
     {
         var entriesWithInvalidDirections = matchingEntries
@@ -150,9 +151,13 @@ public static class EmailContentHelper
         var categoryTotalAmount = matchingEntries.Sum(entry => entry.Direction == TransactionDirection.Expense.ToString() ? -entry.Amount : entry.Amount);
         var categorySummaryText = $"{categoryName} R {categoryTotalAmount}";
 
-        var lineItems = matchingEntries.Select(matchingEntry => new ReportSummaryItem.LineItem(matchingEntry.ToSummaryString())).ToList();
+        var lineItems = matchingEntries
+            .Select(matchingEntry => new ReportSummaryItem.LineItem(
+                matchingEntry.Reference,
+                matchingEntry.ToSummaryString()))
+            .ToList();
 
-        summaryItems.Add(new ReportSummaryItem(categorySummaryText, lineItems));
+        summaryItems.Add(new ReportSummaryItem(categorySummaryText, lineItems, isUnknownCategory));
     }
 
     private class HtmlTableCellDefinition<T>
